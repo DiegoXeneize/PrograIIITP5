@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tree JSON</title>
+  </head>
+  <style>
+    body {
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: black;
+    }
+    #tree,
+    .children {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: row;
+    }
+    #tree {
+      width: auto;
+      overflow-x: auto;
+    }
+    .node {
+      width: 100%;
+      /* padding: 20px; */
+      /* min-width: fit-content; */
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-content: stretch;
+      align-items: center;
+    }
+    .key {
+      text-align: center;
+      min-width: 50px;
+      margin: 35px;
+      background-color: black;
+      color: white;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 20px;
+    }
+    .left {
+      width: 50%;
+      margin-right: auto;
+    }
+    .right {
+      width: 50%;
+      margin-left: auto;
+    }
+    #lineCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <body>
+    <form id="json-form">
+      <textarea name="input">
+{
+        "root": {
+          "key": "Luis",
+          "left": {
+            "key": "Eduardo",
+            "left": {
+              "key": "Daniel",
+              "left": {
+                "key": "Bernardo",
+                "left": {
+                  "key": "Ana",
+                  "left": {
+                    "key": "Alejandro"
+                  },
+                  "right": {
+                    "key": "Beatriz"
+                  }
+                },
+                "right": {
+                  "key": "Carmen",
+                  "left": {
+                    "key": "Carlos"
+                  }
+                }
+              },
+              "right": {
+                "key": "Diana"
+              }
+            },
+            "right": {
+              "key": "Gustavo",
+              "left": {
+                "key": "Fernanda"
+              },
+              "right": {
+                "key": "Ignacio",
+                "left": {
+                  "key": "Hilda"
+                },
+                "right": {
+                  "key": "Karla",
+                  "left": {
+                    "key": "Julia"
+                  }
+                }
+              }
+            }
+          },
+          "right": {
+            "key": "Vicente",
+            "left": {
+              "key": "Pedro",
+              "left": {
+                "key": "Nicolás",
+                "left": {
+                  "key": "María"
+                },
+                "right": {
+                  "key": "Olivia"
+                }
+              },
+              "right": {
+                "key": "Ricardo",
+                "left": {
+                  "key": "Querida"
+                },
+                "right": {
+                  "key": "Sofía",
+                  "right": {
+                    "key": "Tomás"
+                  }
+                }
+              }
+            },
+            "right": {
+              "key": "Ximena",
+              "left": {
+                "key": "Wendy"
+              },
+              "right": {
+                "key": "Zacarías",
+                "left": {
+                  "key": "Yolanda"
+                },
+                "right": {
+                  "key": "Úrsula"
+                }
+              }
+            }
+            }
+            }
+            }</textarea
+      >
+      <button type="submit">Dibujar</button>
+    </form>
+    <button id="btn-draw-lines">Draw Lines</button>
+    <canvas id="lineCanvas"></canvas>
+
+    <p id="messages"></p>
+    <div id="tree"></div>
+    <script>
+      let treeALV = {};
+      const form = document.querySelector("form#json-form");
+      const messages = document.querySelector("p#messages");
+      const tree = document.querySelector("div#tree");
+
+      // Establecer el tamaño del canvas para que cubra toda la ventana
+
+      const canvas = document.getElementById("lineCanvas");
+      const context = canvas.getContext("2d");
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        try {
+          treeALV = JSON.parse(form.input.value);
+          console.log(treeALV);
+          tree.innerHTML = "";
+          tree.appendChild(createNodeElement(treeALV.root));
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+
+      function createNodeElement(node) {
+        // Crear el contenedor principal con la clase "node"
+        const nodeElement = document.createElement("div");
+        nodeElement.classList.add("node");
+
+        // Crear el div con la clase "key" y el texto "hola"
+        const key = document.createElement("div");
+        key.classList.add("key");
+        key.textContent = node.key;
+        key.id = "node-key-" + node.key + "-id-" + node.id;
+
+        nodeElement.appendChild(key);
+
+        if (node.left || node.right) {
+          // Crear el contenedor de los children con la clase "children"
+          const children = document.createElement("div");
+          children.classList.add("children");
+          if (node.left) {
+            const left = document.createElement("div");
+            left.classList.add("left");
+            left.appendChild(createNodeElement(node.left));
+            children.appendChild(left);
+          }
+          if (node.right) {
+            const right = document.createElement("div");
+            right.classList.add("right");
+            right.appendChild(createNodeElement(node.right));
+            children.appendChild(right);
+          }
+          // Añadir "key" y "children" a "node"
+          nodeElement.appendChild(children);
+        }
+
+        // Añadir "node" al cuerpo del documento (o a otro elemento deseado)
+        return nodeElement;
+      }
+
+      const btnDrawLines = document.querySelector("button#btn-draw-lines");
+      btnDrawLines.onclick = (e) => {
+        treeALV = JSON.parse(form.input.value);
+        const lines = [];
+        getLines(lines, treeALV.root);
+        console.log(lines);
+        drawLines(lines);
+      };
+
+      function drawLines(lines) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Limpiar el canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Dibujar todas las líneas guardadas
+        lines.forEach((line) => {
+          context.beginPath();
+          context.moveTo(line.x1, line.y1);
+          context.lineTo(line.x2, line.y2);
+          context.strokeStyle = line.color;
+          context.lineWidth = 2;
+          context.stroke();
+        });
+      }
+      function getLines(list, node) {
+        const getLine = (cord1, cord2, color) => {
+          return {
+            x1: cord1.x,
+            y1: cord1.y,
+            x2: cord2.x,
+            y2: cord2.y,
+            color: color,
+          };
+        };
+        const getElementCords = (element) => {
+          const cord = { x: 0, y: 0 };
+          const rect = element.getBoundingClientRect();
+          cord.x = rect.left + rect.width / 2;
+          cord.y = rect.top + rect.height / 2;
+          return cord;
+        };
+
+        const nodeKeyElement = document.getElementById(
+          "node-key-" + node.key + "-id-" + node.id
+        );
+        if (node.left || node.right) {
+          if (node.left) {
+            const nodeLeftKeyElement = document.getElementById(
+              "node-key-" + node.left.key + "-id-" + node.left.id
+            );
+
+            list.push(
+              getLine(
+                getElementCords(nodeKeyElement),
+                getElementCords(nodeLeftKeyElement),
+                "blue"
+              )
+            );
+            getLines(list, node.left);
+          }
+          if (node.right) {
+            const nodeRightKeyElement = document.getElementById(
+              "node-key-" + node.right.key + "-id-" + node.right.id
+            );
+
+            list.push(
+              getLine(
+                getElementCords(nodeKeyElement),
+                getElementCords(nodeRightKeyElement),
+                "red"
+              )
+            );
+            getLines(list, node.right);
+          }
+        }
+      }
+
+      function getJson() {
+        fetch("tree.json")
+          .then((res) => res.json())
+          .then((treeData) => {
+            treeALV = treeData;
+            tree.appendChild(createNodeElement(treeALV.root));
+            const lines = [];
+            getLines(lines, treeData.root);
+
+            drawLines(lines);
+          })
+          .catch((e) => {
+            messages.innerHTML = e.message;
+          });
+      }
+
+      window.onload = () => {
+        setTimeout(() => {
+          getJson();
+        }, 1000);
+      };
+      window.onresize = () => {
+        const lines = [];
+        getLines(lines, treeALV.root);
+        drawLines(lines);
+      };
+      tree.onscroll = () => {
+        const lines = [];
+        getLines(lines, treeALV.root);
+        drawLines(lines);
+      };
+    </script>
+  </body>
+</html>

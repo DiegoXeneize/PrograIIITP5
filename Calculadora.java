@@ -9,6 +9,11 @@ public class Calculadora extends JFrame {
     private JPanel panelBotones;
     private JPanel panelPrincipal;
 
+    private boolean solveClick = false;
+    private boolean operatorClick = false;
+    private boolean numberClick = false;
+
+
     public Calculadora() {
         // Configuración del JFrame
         setTitle("Calculadora");
@@ -57,18 +62,57 @@ public class Calculadora extends JFrame {
         setVisible(true);
     }
 
-
     private class BotonActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            if (solveClick) campoCuentas.setText("");
             String textoBoton = ((JButton) e.getSource()).getText();
 
             if (textoBoton.equals("DEL")) {
+                solveClick = false;
+                numberClick = false;
+                operatorClick = false;
                 String textoActual = campoCuentas.getText();
                 if (!textoActual.isEmpty()) {
                     campoCuentas.setText(textoActual.substring(0, textoActual.length() - 1));
                 }
-            } else {
+            } else if (textoBoton.equals("=")) {
+                solveClick = true;
+                numberClick = false;
+                operatorClick = false;
+                String textoActual = campoCuentas.getText();
+
+                try{
+
+                    campoCuentas.setText(String.valueOf(Solver.solve(textoActual)));
+                }catch (Exception exception){
+                    campoCuentas.setText("Error");
+
+                }
+            } else if (textoBoton.equals("+") || textoBoton.equals("-") || textoBoton.equals("*") || textoBoton.equals("/") ) {
+                solveClick = false;
+                numberClick = false;
+
+                String textoActual = campoCuentas.getText();
+
+                if (operatorClick){
+                    campoCuentas.setText(textoActual.substring(0, textoActual.length() - 1));
+                }else{
+                    operatorClick = true;
+                }
+                campoCuentas.append(textoBoton);
+
+            }else {
+                String textoActual = campoCuentas.getText();
+
+                solveClick = false;
+                operatorClick = false;
+
+                if (numberClick){
+                    campoCuentas.setText(textoActual.substring(0, textoActual.length() - 1));
+                }else{
+                    numberClick = true;
+                }
                 campoCuentas.append(textoBoton);
             }
         }
